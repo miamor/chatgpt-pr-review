@@ -56,6 +56,7 @@ def prompt(filename: str, contents: str) -> str:
 
 
 def line_start_patch(patch: str) -> int:
+    print(f'[line_start_patch] patch: {patch}')
     match = search(r"^@@ [-+](\d*),", patch)
     return int(match.group(1))
 
@@ -65,9 +66,11 @@ def files_for_review(pull: PullRequest, patterns: List[str]) -> Iterable[Tuple[s
     commits = pull.get_commits()
     for commit in commits:
         for file in commit.files:
+            print(f'[files_for_review] file: {file}')
             if file.status in ["unchanged", "removed"]:
                 continue
             for pattern in patterns:
+                print(f'[files_for_review] pattern: {pattern}')
                 if fnmatch(file.filename, pattern) and not changes.get(file.filename, None):
                     changes[file.filename] = (
                         line_start_patch(file.patch), commit)
