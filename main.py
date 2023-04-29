@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 from re import search
 import openai
 from github import Github, PullRequest, Commit
-
+import time
 
 def code_type(filename: str) -> str | None:
     match = search(r"^.*\.([^.]*)$", filename)
@@ -56,22 +56,19 @@ def prompt(filename: str, contents: str) -> str:
 
 
 def line_start_patch(patch: str) -> int:
-    print(f'[line_start_patch] patch: {patch}')
     match = search(r"^@@ [-+](\d*),", patch)
     return int(match.group(1))
 
 
-def files_for_review(pull: PullRequest, patterns: List[str]) -> Iterable[Tuple[str, int, Commit.Commit]]:
+def files_for_review(pull: PullRequest.PullRequest, patterns: List[str]) -> Iterable[Tuple[str, int, Commit.Commit]]:
     changes = {}
     commits = pull.get_commits()
     for commit in commits:
         for file in commit.files:
-            print(f'[files_for_review] file: {file}')
             if file.status in ["unchanged", "removed"]:
                 continue
             for pattern in patterns:
-                print(f'[files_for_review] pattern: {pattern}')
-                if fnmatch(file.filename, pattern) and not changes.get(file.filename, None):
+                if fnmatch(file.filename, pattern) and not changes.get(file.filename, None) and file.patch:
                     changes[file.filename] = (
                         line_start_patch(file.patch), commit)
 
@@ -128,6 +125,7 @@ def main():
                          "line": line,
                          "body": review(filename, content, args.openai_model, args.openai_temperature,
                                         args.openai_max_tokens)})
+        time.sleep(20) #? avoid rpm error
 
     if len(comments) > 0:
         pull.create_review(body="**ChatGPT code review**",
