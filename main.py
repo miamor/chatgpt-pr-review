@@ -76,13 +76,19 @@ def files_for_review(pull: PullRequest.PullRequest, patterns: List[str]) -> Iter
 
 
 def review(filename: str, content: str, model: str, temperature: float, max_tokens: int) -> str:
+    prompt_content = prompt(filename, content)
+
+    if len(prompt_content) > 4097: #? hard limit reached
+        return f"*ChatGPT review for {filename}:*\n" \
+           f"FAILED due to message length limit reached ({len(prompt_content)} tokens)"
+
     chat_review = openai.ChatCompletion.create(
         model=model,
         temperature=temperature,
         max_tokens=max_tokens,
         messages=[{
             "role": "user",
-            "content": prompt(filename, content),
+            "content": prompt_content,
         }]
     ).choices[0].message.content
     return f"*ChatGPT review for {filename}:*\n" \
