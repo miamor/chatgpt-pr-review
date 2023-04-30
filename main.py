@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from re import search
 import openai
 from github import Github, PullRequest, Commit
+from github import GithubException
 import time
 
 def code_type(filename: str) -> str | None:
@@ -134,8 +135,11 @@ def main():
         time.sleep(20) #? avoid rpm error
 
     if len(comments) > 0:
-        pull.create_review(body="**ChatGPT code review**",
-                           event="COMMENT", comments=comments)
+        try:
+            pull.create_review(body="**ChatGPT code review**",
+                               event="COMMENT", comments=comments)
+        except GithubException as e:
+            print(f"Exception: {e}")
 
 
 if __name__ == "__main__":
